@@ -13,28 +13,28 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.1.2
 
-# AI & LLM
+# AI & LLM (using openai directly - langchain removed for size)
 openai==1.12.0
-langchain==0.1.6
-langchain-openai==0.0.5
-langchain-community==0.0.19
+# langchain==0.1.6  # Removed - too large for Vercel serverless
+# langchain-openai==0.0.5
+# langchain-community==0.0.19
 
 # Image/Video Generation
 pillow==10.2.0
-replicate==0.23.1
+# replicate==0.23.1  # Removed - not essential, using httpx for API calls
 # stability-sdk==0.8.4  # Removed - requires old grpcio incompatible with Python 3.12
 
-# Avatar & Text-to-Speech
-elevenlabs==0.2.27
+# Avatar & Text-to-Speech (using httpx for ElevenLabs API directly)
+# elevenlabs==0.2.27  # Removed - using httpx for direct API calls
 gtts==2.5.0
 
-# Visualization (lightweight - manim removed due to Vercel compatibility)
-matplotlib==3.8.2
-numpy==1.26.3
+# Visualization - REMOVED for Vercel size limit
+# matplotlib==3.8.2  # Removed - too large for serverless
+# numpy==1.26.3  # Removed - too large for serverless
 
-# Caching & Queue
-redis==5.0.1
-celery==5.3.6
+# Caching & Queue - REMOVED (not needed for serverless)
+# redis==5.0.1
+# celery==5.3.6
 
 # Utilities
 python-dotenv==1.0.1
