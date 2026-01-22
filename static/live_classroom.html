@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Teacher - Live Classroom</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            background: #333;
+        }
+
+        .status-badge.connected {
+            background: #22c55e;
+        }
+
+        .status-badge.teaching {
+            background: #3b82f6;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+        }
+
+        .teaching-area {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .visual-container {
+            background: #0a0a0a;
+            border-radius: 15px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .visual-container canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .visual-placeholder {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .explanation-text {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 150px;
+            font-size: 1.2em;
+            line-height: 1.8;
+        }
+
+        .explanation-text .word {
+            display: inline;
+            transition: all 0.2s;
+        }
+
+        .explanation-text .word.highlight {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .explanation-text .word.emphasis-high {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+
+        .explanation-text .word.emphasis-medium {
+            color: #8b5cf6;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .avatar-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .avatar-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #3b82f6);
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4em;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .avatar-circle.speaking {
+            animation: speak 0.5s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes speak {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .question-input-area {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 20px;
+        }
+
+        .question-input-area h3 {
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 1em;
+        }
+
+        .input-group input::placeholder {
+            color: #666;
+        }
+
+        .input-group button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #7c3aed, #3b82f6);
+            color: #fff;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .input-group button:hover {
+            transform: scale(1.05);
+        }
+
+        .input-group button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .quick-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .quick-question {
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .quick-question:hover {
+            background: rgba(124, 58, 237, 0.5);
+        }
+
+        .feedback-area {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 20px;
+        }
+
+        .feedback-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .feedback-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.5em;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+
+        .feedback-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .participants {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        /* Animation Canvas Styles */
+        #animationCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .visual-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 AI Teacher - Live Classroom</h1>
+            <span id="statusBadge" class="status-badge">Connecting...</span>
+        </div>
+
+        <div class="main-content">
+            <div class="teaching-area">
+                <div class="visual-container" id="visualContainer">
+                    <canvas id="animationCanvas"></canvas>
+                    <span class="visual-placeholder" id="visualPlaceholder">
+                        Visual demonstrations will appear here
+                    </span>
+                    <div class="visual-label" id="visualLabel" style="display:none;"></div>
+                </div>
+                
+                <div class="explanation-text" id="explanationText">
+                    <span style="color: #666;">Ask a question to start learning...</span>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="avatar-container">
+                    <div class="avatar-circle" id="avatar">🧑‍🏫</div>
+                    <p id="avatarStatus">Ready to teach!</p>
+                </div>
+
+                <div class="question-input-area">
+                    <h3>Ask Your Question</h3>
+                    <div class="input-group">
+                        <input type="text" id="questionInput" placeholder="What would you like to learn?">
+                        <button id="askButton" onclick="askQuestion()">Ask</button>
+                    </div>
+                    
+                    <div class="quick-questions">
+                        <span class="quick-question" onclick="askQuickQuestion('What is gravity?')">What is gravity?</span>
+                        <span class="quick-question" onclick="askQuickQuestion('How do pendulums work?')">Pendulums</span>
+                        <span class="quick-question" onclick="askQuickQuestion('Explain wave motion')">Waves</span>
+                        <span class="quick-question" onclick="askQuickQuestion('What is photosynthesis?')">Photosynthesis</span>
+                    </div>
+                </div>
+
+                <div class="feedback-area">
+                    <h3 style="text-align:center; margin-bottom:15px;">How's the explanation?</h3>
+                    <div class="feedback-buttons">
+                        <button class="feedback-btn" onclick="sendFeedback('understood')" title="I understand!">👍</button>
+                        <button class="feedback-btn" onclick="sendFeedback('confused')" title="I'm confused">😕</button>
+                        <button class="feedback-btn" onclick="sendFeedback('too_fast')" title="Too fast!">⏩</button>
+                        <button class="feedback-btn" onclick="sendFeedback('too_slow')" title="Too slow">🐢</button>
+                    </div>
+                </div>
+
+                <div class="participants" id="participants">
+                    Participants: 1
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connection
+        let ws = null;
+        let sessionId = 'demo-' + Math.random().toString(36).substr(2, 8);
+        let isTeaching = false;
+
+        // Animation state
+        let animationCtx = null;
+        let currentAnimation = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initCanvas();
+            connectWebSocket();
+            
+            // Enter key to submit
+            document.getElementById('questionInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') askQuestion();
+            });
+        });
+
+        function initCanvas() {
+            const canvas = document.getElementById('animationCanvas');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            animationCtx = canvas.getContext('2d');
+        }
+
+        function connectWebSocket() {
+            const wsUrl = `ws://localhost:8000/api/v1/ws/classroom/${sessionId}`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                updateStatus('connected', 'Connected');
+                console.log('Connected to classroom');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleMessage(data);
+            };
+
+            ws.onclose = () => {
+                updateStatus('disconnected', 'Disconnected');
+                // Reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function handleMessage(data) {
+            console.log('Received:', data);
+
+            switch (data.type) {
+                case 'connected':
+                    updateParticipants(data.participants);
+                    break;
+
+                case 'teaching_start':
+                    isTeaching = true;
+                    updateStatus('teaching', '🔴 Live Teaching');
+                    document.getElementById('explanationText').innerHTML = '';
+                    document.getElementById('avatar').classList.add('speaking');
+                    document.getElementById('avatarStatus').textContent = 'Teaching...';
+                    document.getElementById('askButton').disabled = true;
+                    break;
+
+                case 'text':
+                    appendText(data.content);
+                    break;
+
+                case 'emphasis':
+                    highlightLastWord(data.word, data.importance);
+                    break;
+
+                case 'visual_cue':
+                case 'visual_update':
+                    handleVisualUpdate(data);
+                    break;
+
+                case 'pause':
+                    // Natural pause in speech
+                    break;
+
+                case 'complete':
+                case 'teaching_end':
+                    isTeaching = false;
+                    updateStatus('connected', 'Connected');
+                    document.getElementById('avatar').classList.remove('speaking');
+                    document.getElementById('avatarStatus').textContent = 'Ready for questions!';
+                    document.getElementById('askButton').disabled = false;
+                    break;
+
+                case 'user_joined':
+                case 'user_left':
+                    updateParticipants(data.participants);
+                    break;
+
+                case 'error':
+                    console.error('Error:', data.message);
+                    alert('Error: ' + data.message);
+                    break;
+            }
+        }
+
+        function appendText(text) {
+            const container = document.getElementById('explanationText');
+            const span = document.createElement('span');
+            span.className = 'word';
+            span.textContent = text;
+            container.appendChild(span);
+            
+            // Auto-scroll
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function highlightLastWord(word, importance) {
+            const container = document.getElementById('explanationText');
+            const words = container.getElementsByClassName('word');
+            if (words.length > 0) {
+                const lastWord = words[words.length - 1];
+                lastWord.classList.add(`emphasis-${importance}`);
+            }
+        }
+
+        function handleVisualUpdate(data) {
+            document.getElementById('visualPlaceholder').style.display = 'none';
+            const label = document.getElementById('visualLabel');
+            
+            if (data.animation || data.data) {
+                const animData = data.data || {};
+                label.textContent = animData.name || 'Animation';
+                label.style.display = 'block';
+                
+                playAnimation(animData);
+            }
+        }
+
+        function playAnimation(animData) {
+            // Cancel previous animation
+            if (currentAnimation) {
+                cancelAnimationFrame(currentAnimation);
+            }
+
+            const canvas = document.getElementById('animationCanvas');
+            const ctx = animationCtx;
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            // Different animations based on type
+            if (animData.type === 'pendulum') {
+                animatePendulum(ctx, width, height, animData);
+            } else if (animData.type === 'sine_wave') {
+                animateWave(ctx, width, height, animData);
+            } else {
+                // Default falling object
+                animateFalling(ctx, width, height, animData);
+            }
+        }
+
+        function animateFalling(ctx, width, height, data) {
+            let startTime = null;
+            const duration = data.duration || 2000;
+            const startY = height * 0.1;
+            const endY = height * 0.85;
+
+            function draw(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Easing function (ease in quad for gravity)
+                const easeProgress = progress * progress;
+                
+                ctx.clearRect(0, 0, width, height);
+                
+                // Draw ground
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(0, height * 0.9, width, height * 0.1);
+                
+                // Draw tree
+                ctx.fillStyle = '#8b4513';
+                ctx.fillRect(width * 0.45, height * 0.3, 20, height * 0.6);
+                ctx.fillStyle = '#228b22';
+                ctx.beginPath();
+                ctx.arc(width * 0.5, height * 0.25, 60, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw apple
+                const currentY = startY + (endY - startY) * easeProgress;
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(width * 0.55, currentY, 15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw gravity arrow
+                if (progress < 1) {
+                    ctx.strokeStyle = '#fbbf24';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(width * 0.55, currentY + 20);
+                    ctx.lineTo(width * 0.55, currentY + 50);
+                    ctx.stroke();
+                    
+                    // Arrow head
+                    ctx.beginPath();
+                    ctx.moveTo(width * 0.55 - 8, currentY + 42);
+                    ctx.lineTo(width * 0.55, currentY + 55);
+                    ctx.lineTo(width * 0.55 + 8, currentY + 42);
+                    ctx.stroke();
+                    
+                    // Label
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.font = '14px Arial';
+                    ctx.fillText('Gravity', width * 0.55 + 15, currentY + 40);
+                }
+
+                if (progress < 1) {
+                    currentAnimation = requestAnimationFrame(draw);
+                } else {
+                    // Impact effect
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.font = '16px Arial';
+                    ctx.fillText('9.8 m/s² acceleration', width * 0.35, height * 0.95);
+                }
+            }
+
+            currentAnimation = requestAnimationFrame(draw);
+        }
+
+        function animatePendulum(ctx, width, height, data) {
+            let startTime = null;
+            const duration = data.duration || 3000;
+            const pivotX = width / 2;
+            const pivotY = height * 0.1;
+            const length = height * 0.6;
+            const amplitude = (data.amplitude || 45) * Math.PI / 180;
+
+            function draw(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+                const period = duration / 2;
+                
+                // Calculate angle using simple harmonic motion
+                const angle = amplitude * Math.cos(2 * Math.PI * elapsed / period);
+                
+                ctx.clearRect(0, 0, width, height);
+                
+                // Draw pivot
+                ctx.fillStyle = '#666';
+                ctx.beginPath();
+                ctx.arc(pivotX, pivotY, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Calculate bob position
+                const bobX = pivotX + length * Math.sin(angle);
+                const bobY = pivotY + length * Math.cos(angle);
+                
+                // Draw string
+                ctx.strokeStyle = '#888';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(pivotX, pivotY);
+                ctx.lineTo(bobX, bobY);
+                ctx.stroke();
+                
+                // Draw bob
+                ctx.fillStyle = '#3b82f6';
+                ctx.beginPath();
+                ctx.arc(bobX, bobY, 20, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw equilibrium line
+                ctx.strokeStyle = '#666';
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(pivotX, pivotY);
+                ctx.lineTo(pivotX, pivotY + length);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                if (elapsed < duration * 3) {
+                    currentAnimation = requestAnimationFrame(draw);
+                }
+            }
+
+            currentAnimation = requestAnimationFrame(draw);
+        }
+
+        function animateWave(ctx, width, height, data) {
+            let startTime = null;
+            const amplitude = data.amplitude || 30;
+            const wavelength = data.wavelength || 100;
+
+            function draw(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+                const phase = elapsed / 500;
+                
+                ctx.clearRect(0, 0, width, height);
+                
+                // Draw axis
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, height / 2);
+                ctx.lineTo(width, height / 2);
+                ctx.stroke();
+                
+                // Draw wave
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                
+                for (let x = 0; x < width; x++) {
+                    const y = height / 2 + amplitude * Math.sin((x / wavelength) * 2 * Math.PI - phase);
+                    if (x === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+                
+                // Draw wavelength marker
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(50, height / 2 - amplitude - 20);
+                ctx.lineTo(50 + wavelength, height / 2 - amplitude - 20);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = '14px Arial';
+                ctx.fillText('λ (wavelength)', 50 + wavelength / 2 - 40, height / 2 - amplitude - 25);
+
+                if (elapsed < 4000) {
+                    currentAnimation = requestAnimationFrame(draw);
+                }
+            }
+
+            currentAnimation = requestAnimationFrame(draw);
+        }
+
+        function askQuestion() {
+            const input = document.getElementById('questionInput');
+            const question = input.value.trim();
+            
+            if (!question || !ws || ws.readyState !== WebSocket.OPEN) return;
+            
+            ws.send(JSON.stringify({
+                type: 'ask_question',
+                question: question,
+                subject: detectSubject(question)
+            }));
+            
+            input.value = '';
+        }
+
+        function askQuickQuestion(question) {
+            document.getElementById('questionInput').value = question;
+            askQuestion();
+        }
+
+        function detectSubject(question) {
+            const q = question.toLowerCase();
+            if (q.includes('gravity') || q.includes('force') || q.includes('motion') || q.includes('pendulum')) return 'physics';
+            if (q.includes('atom') || q.includes('molecule') || q.includes('reaction')) return 'chemistry';
+            if (q.includes('cell') || q.includes('plant') || q.includes('animal') || q.includes('photosynthesis')) return 'biology';
+            if (q.includes('equation') || q.includes('number') || q.includes('calculate')) return 'mathematics';
+            return 'general';
+        }
+
+        function sendFeedback(type) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            
+            ws.send(JSON.stringify({
+                type: 'feedback',
+                feedback_type: type
+            }));
+        }
+
+        function updateStatus(status, text) {
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = text;
+            badge.className = 'status-badge ' + status;
+        }
+
+        function updateParticipants(count) {
+            document.getElementById('participants').textContent = `Participants: ${count}`;
+        }
+    </script>
+</body>
+</html>

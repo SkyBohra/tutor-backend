@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # AI Teacher Python Backend
+  ai-teacher-backend:
+    build: .
+    container_name: ai-teacher-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/ai-teacher
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
+    volumes:
+      - ./media:/app/media
+      - ./logs:/app/logs
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+    networks:
+      - ai-teacher-network
+
+  # MongoDB
+  mongo:
+    image: mongo:7.0
+    container_name: ai-teacher-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    networks:
+      - ai-teacher-network
+
+  # Redis for caching and queues
+  redis:
+    image: redis:7-alpine
+    container_name: ai-teacher-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - ai-teacher-network
+
+  # Celery Worker (for background tasks)
+  celery-worker:
+    build: .
+    container_name: ai-teacher-celery
+    command: celery -A app.celery_app worker --loglevel=info
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/ai-teacher
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
+    volumes:
+      - ./media:/app/media
+    depends_on:
+      - mongo
+      - redis
+      - ai-teacher-backend
+    restart: unless-stopped
+    networks:
+      - ai-teacher-network
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  ai-teacher-network:
+    driver: bridge
