@@ -22,7 +22,7 @@ langchain-community==0.0.19
 # Image/Video Generation
 pillow==10.2.0
 replicate==0.23.1
-stability-sdk==0.8.4
+# stability-sdk==0.8.4  # Removed - requires old grpcio incompatible with Python 3.12
 
 # Avatar & Text-to-Speech
 elevenlabs==0.2.27
